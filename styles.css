@@ -175,13 +175,37 @@ body {
   border-top: 3px solid var(--white);
 }
 
-.major-tick {
+.major-button {
   position: absolute;
+  top: 50%;
+  width: clamp(24px, 4vw, 30px);
+  height: clamp(44px, 10.2dvh, 64px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.major-button::before {
+  content: "";
+  position: absolute;
+  left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   width: 5px;
   height: var(--major-tick-height);
+  background: var(--gray);
+  transition: background-color 140ms ease;
+}
+
+.major-button.active::before {
   background: var(--white);
+}
+
+.major-button:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
 }
 
 .sub-button {
@@ -229,7 +253,7 @@ body {
   }
 }
 
-.major-tick.pulse {
+.major-button.pulse {
   animation: tick-pulse 250ms ease-out;
 }
 

@@ -25,6 +25,7 @@ const state = {
   currentStep: 0,
   nextStepTime: 0,
   schedulerId: null,
+  activeMajorBeats: new Set(MAJOR_STEPS),
   activeSubdivisions: new Set(),
   phaseSegments: [],
   isTempoEditing: false,
@@ -81,12 +82,26 @@ function buildTracks() {
   for (let step = 0; step < TOTAL_STEPS; step += 1) {
     const leftPct = (step / TOTAL_STEPS) * 100;
     if (MAJOR_STEPS.has(step)) {
-      const majorTick = document.createElement("div");
-      majorTick.className = "major-tick";
-      majorTick.style.left = `${leftPct}%`;
-      state.majorTicks.set(step, majorTick);
-
-      majorFragment.appendChild(majorTick);
+      const majorButton = document.createElement("button");
+      majorButton.type = "button";
+      majorButton.className = "major-button";
+      majorButton.style.left = `${leftPct}%`;
+      majorButton.dataset.step = String(step);
+      majorButton.ariaLabel = `Main beat ${step / STEPS_PER_BEAT + 1}`;
+      majorButton.classList.toggle("active", state.activeMajorBeats.has(step));
+      majorButton.addEventListener("click", () => {
+        if (majorButton.disabled) {
+          return;
+        }
+        if (state.activeMajorBeats.has(step)) {
+          state.activeMajorBeats.delete(step);
+        } else {
+          state.activeMajorBeats.add(step);
+        }
+        majorButton.classList.toggle("active", state.activeMajorBeats.has(step));
+      });
+      state.majorTicks.set(step, majorButton);
+      majorFragment.appendChild(majorButton);
       continue;
     }
 
@@ -211,7 +226,7 @@ function bindAudioUnlockEvents() {
 }
 
 function scheduleStep(step, time) {
-  if (MAJOR_STEPS.has(step)) {
+  if (MAJOR_STEPS.has(step) && state.activeMajorBeats.has(step)) {
     makeClickSound(time, { freq: 1560, volume: 0.35, decay: 0.05 });
   } else if (state.activeSubdivisions.has(step)) {
     makeClickSound(time, { freq: 820, volume: 0.28, decay: 0.06 });
@@ -238,7 +253,9 @@ function scheduleVisualPulse(step, time, runId) {
       return;
     }
     if (MAJOR_STEPS.has(step)) {
-      pulseElement(state.majorTicks.get(step));
+      if (state.activeMajorBeats.has(step)) {
+        pulseElement(state.majorTicks.get(step));
+      }
       return;
     }
     if (state.activeSubdivisions.has(step)) {
