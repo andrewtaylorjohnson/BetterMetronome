@@ -248,7 +248,7 @@ body {
   );
   width: 5px;
   margin-left: -2.5px;
-  background: var(--red);
+  background: var(--blue);
   left: 0%;
   pointer-events: none;
   z-index: 5;
