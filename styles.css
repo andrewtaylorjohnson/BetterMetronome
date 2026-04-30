@@ -296,8 +296,7 @@ body {
 }
 
 @media (orientation: landscape) {
-  .sub-track {
-    width: 75%;
-    justify-self: center;
+  .timeline-wrap {
+    width: min(645px, 69vw);
   }
 }
