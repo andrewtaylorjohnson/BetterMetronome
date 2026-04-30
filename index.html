@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offbeat Metronome</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="top-panel">
+        <button id="tempoControl" class="tempo-circle" type="button" aria-label="Drag left or right to set tempo">
+          <span id="bpmValue">120</span>
+        </button>
+        <button id="transportButton" class="transport-button" type="button" aria-label="Play metronome">
+          Play
+        </button>
+      </section>
+
+      <section class="timeline-panel">
+        <div class="timeline-wrap">
+          <div id="playhead" class="playhead" aria-hidden="true"></div>
+          <div id="majorTrack" class="track major-track" aria-label="Major beats"></div>
+          <div
+            id="subTrack"
+            class="track sub-track"
+            aria-label="Subdivision beats"
+          ></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
