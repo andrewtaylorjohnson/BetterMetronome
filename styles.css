@@ -149,8 +149,8 @@ body {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 2px;
-  height: 40px;
+  width: 5px;
+  height: 80px;
   background: var(--white);
 }
 
@@ -172,7 +172,7 @@ body {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 2px;
+  width: 5px;
   height: 40px;
   background: var(--gray);
   transition: background-color 140ms ease;
@@ -185,6 +185,26 @@ body {
 .sub-button:focus-visible {
   outline: 2px solid var(--white);
   outline-offset: 2px;
+}
+
+@keyframes tick-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  10% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.major-tick.pulse {
+  animation: tick-pulse 250ms ease-out;
+}
+
+.sub-button.pulse {
+  animation: tick-pulse 250ms ease-out;
 }
 
 .playhead {

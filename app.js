@@ -28,6 +28,9 @@ const state = {
   activeSubdivisions: new Set(),
   phaseSegments: [],
   isTempoEditing: false,
+  transportRunId: 0,
+  majorTicks: new Map(),
+  subdivisionButtons: new Map(),
   drag: {
     active: false,
     startX: 0,
@@ -51,6 +54,8 @@ function stepDurationSeconds(bpm) {
 function buildTracks() {
   const majorFragment = document.createDocumentFragment();
   const subFragment = document.createDocumentFragment();
+  state.majorTicks.clear();
+  state.subdivisionButtons.clear();
 
   for (let step = 0; step < TOTAL_STEPS; step += 1) {
     const leftPct = (step / TOTAL_STEPS) * 100;
@@ -58,8 +63,10 @@ function buildTracks() {
       const majorTick = document.createElement("div");
       majorTick.className = "major-tick";
       majorTick.style.left = `${leftPct}%`;
+      state.majorTicks.set(step, majorTick);
 
       majorFragment.appendChild(majorTick);
+      continue;
     }
 
     const button = document.createElement("button");
@@ -82,6 +89,7 @@ function buildTracks() {
       }
     });
 
+    state.subdivisionButtons.set(step, button);
     subFragment.appendChild(button);
   }
 
@@ -126,6 +134,35 @@ function scheduleStep(step, time) {
   }
 }
 
+function pulseElement(element) {
+  if (!element) {
+    return;
+  }
+  element.classList.remove("pulse");
+  // Restart animation for repeated triggers on the same element.
+  void element.offsetWidth;
+  element.classList.add("pulse");
+}
+
+function scheduleVisualPulse(step, time, runId) {
+  if (!audioCtx) {
+    return;
+  }
+  const delayMs = Math.max(0, (time - audioCtx.currentTime) * 1000);
+  window.setTimeout(() => {
+    if (!state.isPlaying || state.transportRunId !== runId) {
+      return;
+    }
+    if (MAJOR_STEPS.has(step)) {
+      pulseElement(state.majorTicks.get(step));
+      return;
+    }
+    if (state.activeSubdivisions.has(step)) {
+      pulseElement(state.subdivisionButtons.get(step));
+    }
+  }, delayMs);
+}
+
 function nextStep() {
   const currentStepDuration = stepDurationSeconds(state.currentBpm);
   const playedStep = state.currentStep;
@@ -154,6 +191,7 @@ function scheduler() {
   while (state.nextStepTime < audioCtx.currentTime + SCHEDULE_AHEAD_TIME) {
     const step = state.currentStep;
     scheduleStep(step, state.nextStepTime);
+    scheduleVisualPulse(step, state.nextStepTime, state.transportRunId);
     nextStep();
   }
 }
@@ -223,6 +261,7 @@ async function startTransport() {
   }
 
   state.isPlaying = true;
+  state.transportRunId += 1;
   state.currentStep = 0;
   state.nextStepTime = audioCtx.currentTime + 0.05;
   state.phaseSegments = [];
@@ -240,6 +279,7 @@ function stopTransport() {
     state.schedulerId = null;
   }
   state.isPlaying = false;
+  state.transportRunId += 1;
   state.currentStep = 0;
   state.phaseSegments = [];
   playhead.style.left = "0%";
@@ -253,7 +293,7 @@ function queueTempoChange(nextBpm) {
     state.pendingBeatGrace = 0;
   } else {
     state.pendingBpm = safeBpm;
-    state.pendingBeatGrace = 1;
+    state.pendingBeatGrace = 0;
   }
   updateTempoText();
 }
