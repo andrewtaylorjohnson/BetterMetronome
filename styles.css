@@ -127,10 +127,6 @@ body {
   cursor: pointer;
 }
 
-.fullscreen-button {
-  min-width: clamp(114px, 20vw, 150px);
-}
-
 .tempo-circle:focus-visible {
   outline: 2px solid var(--white);
   outline-offset: 5px;
@@ -231,10 +227,67 @@ body {
 
 .playhead {
   position: absolute;
-  top: 6px;
-  bottom: 6px;
+  top: 12px;
+  bottom: 12px;
   width: 0;
   border-left: 2px dotted var(--white);
   left: 0%;
   pointer-events: none;
+}
+
+@media (orientation: portrait) {
+  .app {
+    height: 100dvh;
+    justify-content: center;
+    gap: clamp(0.7rem, 2.2dvh, 1.2rem);
+  }
+
+  .top-panel {
+    gap: clamp(0.6rem, 1.4dvh, 0.95rem);
+  }
+
+  .controls-row {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tempo-circle {
+    width: clamp(180px, min(56vw, 34dvh), 300px);
+  }
+
+  .transport-button {
+    min-width: clamp(110px, 26vw, 160px);
+    height: clamp(42px, 7.4dvh, 54px);
+    font-size: clamp(0.9rem, 3.4vw, 1.05rem);
+  }
+
+  .timeline-panel {
+    flex: 0 0 auto;
+  }
+
+  .timeline-wrap {
+    width: min(760px, 86vw);
+    gap: clamp(0.35rem, 1.2dvh, 0.7rem);
+  }
+
+  .track {
+    height: clamp(44px, 8.4dvh, 64px);
+  }
+
+  .major-tick {
+    height: clamp(46px, 10.2dvh, 64px);
+  }
+
+  .sub-button {
+    height: clamp(28px, 6.5dvh, 40px);
+  }
+
+  .sub-button::before {
+    height: clamp(22px, 5.6dvh, 30px);
+  }
+
+  .playhead {
+    top: clamp(16px, 3dvh, 24px);
+    bottom: clamp(16px, 3dvh, 24px);
+  }
 }

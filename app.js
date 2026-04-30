@@ -5,7 +5,6 @@ const bpmValue = document.getElementById("bpmValue");
 const bpmInput = document.getElementById("bpmInput");
 const tempoControl = document.getElementById("tempoControl");
 const transportButton = document.getElementById("transportButton");
-const fullscreenButton = document.getElementById("fullscreenButton");
 
 const TOTAL_STEPS = 16;
 const STEPS_PER_BEAT = 4;
@@ -502,49 +501,6 @@ function initTempoDrag() {
   bpmInput.addEventListener("blur", () => finishTempoEditing(true));
 }
 
-function getFullscreenElement() {
-  return (
-    document.fullscreenElement ||
-    document.webkitFullscreenElement ||
-    null
-  );
-}
-
-function fullscreenSupported() {
-  return Boolean(
-    document.documentElement.requestFullscreen ||
-      document.documentElement.webkitRequestFullscreen
-  );
-}
-
-function updateFullscreenButton() {
-  const isFullscreen = Boolean(getFullscreenElement());
-  fullscreenButton.textContent = isFullscreen ? "Exit Fullscreen" : "Fullscreen";
-  fullscreenButton.setAttribute(
-    "aria-label",
-    isFullscreen ? "Exit fullscreen" : "Enter fullscreen"
-  );
-}
-
-async function toggleFullscreen() {
-  if (!fullscreenSupported()) {
-    return;
-  }
-  const isFullscreen = Boolean(getFullscreenElement());
-  if (!isFullscreen) {
-    const request =
-      document.documentElement.requestFullscreen ||
-      document.documentElement.webkitRequestFullscreen;
-    await request.call(document.documentElement);
-  } else {
-    const exit = document.exitFullscreen || document.webkitExitFullscreen;
-    if (exit) {
-      await exit.call(document);
-    }
-  }
-  updateFullscreenButton();
-}
-
 transportButton.addEventListener("click", () => {
   if (state.isPlaying) {
     stopTransport();
@@ -554,19 +510,12 @@ transportButton.addEventListener("click", () => {
     });
   }
 });
-fullscreenButton.addEventListener("click", toggleFullscreen);
-document.addEventListener("fullscreenchange", updateFullscreenButton);
-document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
 
 buildTracks();
 initTempoDrag();
 updateTempoText();
 updateTransportButton();
-updateFullscreenButton();
 bindAudioUnlockEvents();
-if (!fullscreenSupported()) {
-  fullscreenButton.hidden = true;
-}
 requestAnimationFrame(updatePlayhead);
 
 /*
