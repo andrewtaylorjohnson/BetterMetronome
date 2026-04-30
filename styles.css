@@ -28,6 +28,21 @@ body {
   place-items: center;
 }
 
+body.landscape-blocked {
+  overflow: hidden;
+}
+
+.portrait-notice {
+  display: none;
+  max-width: min(86vw, 520px);
+  text-align: center;
+  font-size: clamp(1rem, 4.5vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+  padding: 1rem 1.25rem;
+}
+
 .app {
   width: min(920px, 100vw);
   min-height: 100dvh;
@@ -219,4 +234,14 @@ body {
   border-left: 2px dotted var(--white);
   left: 0%;
   pointer-events: none;
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  .portrait-notice {
+    display: block;
+  }
+
+  body.landscape-blocked .app {
+    display: none;
+  }
 }

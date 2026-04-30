@@ -1,6 +1,7 @@
 const majorTrack = document.getElementById("majorTrack");
 const subTrack = document.getElementById("subTrack");
 const playhead = document.getElementById("playhead");
+const portraitNotice = document.getElementById("portraitNotice");
 const bpmValue = document.getElementById("bpmValue");
 const bpmInput = document.getElementById("bpmInput");
 const tempoControl = document.getElementById("tempoControl");
@@ -42,6 +43,11 @@ const state = {
 };
 
 let audioCtx;
+let audioUnlockBound = false;
+
+function getAudioContextCtor() {
+  return window.AudioContext || window.webkitAudioContext || null;
+}
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -124,6 +130,47 @@ function makeClickSound(time, options) {
   gain.connect(audioCtx.destination);
   oscillator.start(time);
   oscillator.stop(time + options.decay + 0.01);
+}
+
+function primeAudioOutput() {
+  if (!audioCtx) {
+    return;
+  }
+  const now = audioCtx.currentTime;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.connect(audioCtx.destination);
+  const source = audioCtx.createOscillator();
+  source.frequency.setValueAtTime(440, now);
+  source.connect(gain);
+  source.start(now);
+  source.stop(now + 0.02);
+}
+
+async function unlockAudioOnGesture() {
+  if (!audioCtx) {
+    return;
+  }
+  if (audioCtx.state !== "running") {
+    await audioCtx.resume();
+  }
+  primeAudioOutput();
+}
+
+function bindAudioUnlockEvents() {
+  if (audioUnlockBound) {
+    return;
+  }
+  audioUnlockBound = true;
+  const unlock = async () => {
+    try {
+      await unlockAudioOnGesture();
+    } catch (_err) {
+      // Ignore unlock failures; transport click retry handles this too.
+    }
+  };
+  window.addEventListener("pointerdown", unlock, { passive: true });
+  window.addEventListener("touchstart", unlock, { passive: true });
 }
 
 function scheduleStep(step, time) {
@@ -251,10 +298,17 @@ function updatePlayhead() {
 
 async function startTransport() {
   if (!audioCtx) {
-    audioCtx = new AudioContext();
+    const AudioContextCtor = getAudioContextCtor();
+    if (!AudioContextCtor) {
+      return;
+    }
+    audioCtx = new AudioContextCtor();
+    bindAudioUnlockEvents();
+    primeAudioOutput();
   }
   if (audioCtx.state === "suspended") {
     await audioCtx.resume();
+    primeAudioOutput();
   }
   if (state.isPlaying) {
     return;
@@ -421,6 +475,22 @@ function initTempoDrag() {
   bpmInput.addEventListener("blur", () => finishTempoEditing(true));
 }
 
+function lockLandscapeIfSupported() {
+  const lock = screen.orientation?.lock;
+  if (typeof lock === "function") {
+    lock.call(screen.orientation, "landscape").catch(() => {
+      // Browser may block orientation lock outside fullscreen/PWA.
+    });
+  }
+}
+
+function updateOrientationUi() {
+  const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+  const shouldBlock = isPortrait && window.matchMedia("(max-width: 900px)").matches;
+  portraitNotice.hidden = !shouldBlock;
+  document.body.classList.toggle("landscape-blocked", shouldBlock);
+}
+
 transportButton.addEventListener("click", () => {
   if (state.isPlaying) {
     stopTransport();
@@ -433,6 +503,11 @@ buildTracks();
 initTempoDrag();
 updateTempoText();
 updateTransportButton();
+bindAudioUnlockEvents();
+lockLandscapeIfSupported();
+updateOrientationUi();
+window.addEventListener("orientationchange", updateOrientationUi);
+window.addEventListener("resize", updateOrientationUi);
 requestAnimationFrame(updatePlayhead);
 
 /*
