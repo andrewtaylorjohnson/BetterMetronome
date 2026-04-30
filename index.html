@@ -3,14 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="screen-orientation" content="landscape" />
     <title>Offbeat Metronome</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div id="portraitNotice" class="portrait-notice" role="status" aria-live="polite">
-      Rotate your phone to landscape to use this metronome.
-    </div>
     <main class="app">
       <section class="top-panel">
         <button
@@ -23,16 +19,28 @@
           <input
             id="bpmInput"
             class="tempo-input"
-            type="text"
+            type="tel"
             inputmode="numeric"
+            pattern="[0-9]*"
+            enterkeyhint="done"
             aria-label="Enter tempo in BPM"
             hidden
           />
         </button>
       </section>
-      <button id="transportButton" class="transport-button" type="button" aria-label="Play metronome">
-        Play
-      </button>
+      <section class="controls-row" aria-label="Transport controls">
+        <button id="transportButton" class="transport-button" type="button" aria-label="Play metronome">
+          Play
+        </button>
+        <button
+          id="fullscreenButton"
+          class="transport-button fullscreen-button"
+          type="button"
+          aria-label="Enter fullscreen"
+        >
+          Fullscreen
+        </button>
+      </section>
 
       <section class="timeline-panel">
         <div class="timeline-wrap">

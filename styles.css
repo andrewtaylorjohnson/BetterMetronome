@@ -26,33 +26,20 @@ body {
   touch-action: manipulation;
   display: grid;
   place-items: center;
-}
-
-body.landscape-blocked {
   overflow: hidden;
-}
-
-.portrait-notice {
-  display: none;
-  max-width: min(86vw, 520px);
-  text-align: center;
-  font-size: clamp(1rem, 4.5vw, 1.4rem);
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  line-height: 1.35;
-  padding: 1rem 1.25rem;
 }
 
 .app {
   width: min(920px, 100vw);
-  min-height: 100dvh;
+  height: min(760px, 100dvh);
   margin: 0;
-  padding: 1.5rem 1.25rem 2.25rem;
+  padding: clamp(0.6rem, 2.4dvh, 1.5rem) clamp(0.7rem, 2.6vw, 1.25rem)
+    clamp(0.8rem, 3.4dvh, 2.25rem);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 1.3rem;
+  gap: clamp(0.4rem, 1.8dvh, 1.3rem);
 }
 
 .top-panel,
@@ -64,15 +51,24 @@ body.landscape-blocked {
 .top-panel {
   flex: 0 0 auto;
   align-content: center;
-  gap: 0.8rem;
+  gap: clamp(0.3rem, 1dvh, 0.8rem);
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 2.4vw, 1rem);
 }
 
 .timeline-panel {
-  flex: 0 0 auto;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .tempo-circle {
-  width: clamp(165px, 33vw, 270px);
+  width: clamp(120px, min(33vw, 30dvh), 270px);
   aspect-ratio: 1;
   border: 4px solid var(--white);
   border-radius: 50%;
@@ -118,17 +114,21 @@ body.landscape-blocked {
 }
 
 .transport-button {
-  min-width: 92px;
-  height: 42px;
+  min-width: clamp(80px, 14vw, 110px);
+  height: clamp(34px, 6.4dvh, 44px);
   border: 2px solid var(--white);
   border-radius: 999px;
   background: transparent;
   color: var(--white);
-  font-size: 0.9rem;
+  font-size: clamp(0.74rem, 2.1vw, 0.92rem);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
+}
+
+.fullscreen-button {
+  min-width: clamp(114px, 20vw, 150px);
 }
 
 .tempo-circle:focus-visible {
@@ -143,15 +143,18 @@ body.landscape-blocked {
 
 .timeline-wrap {
   width: min(860px, 92vw);
+  max-width: 100%;
+  height: 100%;
   position: relative;
   display: grid;
-  gap: 1.5rem;
+  align-content: center;
+  gap: clamp(0.5rem, 2.2dvh, 1.5rem);
 }
 
 .track {
   position: relative;
   width: 100%;
-  height: 90px;
+  height: clamp(52px, 11.6dvh, 90px);
 }
 
 .track::before {
@@ -169,15 +172,15 @@ body.landscape-blocked {
   top: 50%;
   transform: translate(-50%, -50%);
   width: 5px;
-  height: 80px;
+  height: clamp(58px, 16dvh, 80px);
   background: var(--white);
 }
 
 .sub-button {
   position: absolute;
   top: 50%;
-  width: 30px;
-  height: 46px;
+  width: clamp(24px, 4vw, 30px);
+  height: clamp(34px, 8dvh, 46px);
   padding: 0;
   border: 0;
   background: transparent;
@@ -192,7 +195,7 @@ body.landscape-blocked {
   top: 50%;
   transform: translate(-50%, -50%);
   width: 5px;
-  height: 40px;
+  height: clamp(28px, 8.4dvh, 40px);
   background: var(--gray);
   transition: background-color 140ms ease;
 }
@@ -234,14 +237,4 @@ body.landscape-blocked {
   border-left: 2px dotted var(--white);
   left: 0%;
   pointer-events: none;
-}
-
-@media (orientation: portrait) and (max-width: 900px) {
-  .portrait-notice {
-    display: block;
-  }
-
-  body.landscape-blocked .app {
-    display: none;
-  }
 }
