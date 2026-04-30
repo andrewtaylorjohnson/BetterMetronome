@@ -2,6 +2,7 @@ const majorTrack = document.getElementById("majorTrack");
 const subTrack = document.getElementById("subTrack");
 const playhead = document.getElementById("playhead");
 const bpmValue = document.getElementById("bpmValue");
+const bpmInput = document.getElementById("bpmInput");
 const tempoControl = document.getElementById("tempoControl");
 const transportButton = document.getElementById("transportButton");
 
@@ -10,8 +11,10 @@ const STEPS_PER_BEAT = 4;
 const MAJOR_STEPS = new Set([0, 4, 8, 12]);
 const LOOKAHEAD_INTERVAL_MS = 25;
 const SCHEDULE_AHEAD_TIME = 0.1;
+const TAP_DRAG_THRESHOLD_PX = 8;
 const MIN_BPM = 40;
 const MAX_BPM = 240;
+const TEMPO_CONTROL_IDLE_LABEL = "Drag left or right to set tempo or tap to type BPM";
 
 const state = {
   isPlaying: false,
@@ -23,10 +26,15 @@ const state = {
   nextStepTime: 0,
   schedulerId: null,
   activeSubdivisions: new Set(),
+  phaseSegments: [],
+  isTempoEditing: false,
   drag: {
     active: false,
     startX: 0,
+    startY: 0,
     startBpm: 120,
+    didDrag: false,
+    pointerId: null,
   },
 };
 
@@ -84,6 +92,9 @@ function buildTracks() {
 function updateTempoText() {
   const shown = state.previewBpm ?? state.pendingBpm ?? state.currentBpm;
   bpmValue.textContent = String(shown);
+  if (!state.isTempoEditing) {
+    bpmInput.value = String(shown);
+  }
 }
 
 function updateTransportButton() {
@@ -127,6 +138,7 @@ function nextStep() {
     } else {
       state.currentBpm = state.pendingBpm;
       state.pendingBpm = null;
+      pushPhaseSegment(state.nextStepTime, state.currentStep, state.currentBpm);
       updateTempoText();
     }
   }
@@ -146,16 +158,54 @@ function scheduler() {
   }
 }
 
+function pushPhaseSegment(startTime, startStep, bpm) {
+  const segment = {
+    startTime,
+    startStep,
+    bpm,
+  };
+  const existingIndex = state.phaseSegments.findIndex(
+    (item) => Math.abs(item.startTime - startTime) < 0.000001
+  );
+  if (existingIndex >= 0) {
+    state.phaseSegments.splice(existingIndex, 1, segment);
+  } else {
+    state.phaseSegments.push(segment);
+    state.phaseSegments.sort((a, b) => a.startTime - b.startTime);
+  }
+  if (state.phaseSegments.length > 16) {
+    state.phaseSegments = state.phaseSegments.slice(-16);
+  }
+}
+
+function getPlayheadStepAtTime(time) {
+  if (state.phaseSegments.length === 0) {
+    return 0;
+  }
+  const firstSegment = state.phaseSegments[0];
+  if (time <= firstSegment.startTime) {
+    return firstSegment.startStep;
+  }
+  let activeSegment = firstSegment;
+  for (const segment of state.phaseSegments) {
+    if (segment.startTime <= time) {
+      activeSegment = segment;
+    } else {
+      break;
+    }
+  }
+  const elapsed = Math.max(0, time - activeSegment.startTime);
+  const elapsedSteps = elapsed / stepDurationSeconds(activeSegment.bpm);
+  return (activeSegment.startStep + elapsedSteps) % TOTAL_STEPS;
+}
+
 function updatePlayhead() {
   if (!state.isPlaying || !audioCtx) {
     requestAnimationFrame(updatePlayhead);
     return;
   }
 
-  const stepLen = stepDurationSeconds(state.currentBpm);
-  const elapsed = audioCtx.currentTime - (state.nextStepTime - stepLen);
-  const progressInStep = clamp(elapsed / stepLen, 0, 1);
-  const visualStep = (state.currentStep + progressInStep) % TOTAL_STEPS;
+  const visualStep = getPlayheadStepAtTime(audioCtx.currentTime);
   const leftPct = (visualStep / TOTAL_STEPS) * 100;
   playhead.style.left = `${leftPct}%`;
   requestAnimationFrame(updatePlayhead);
@@ -175,6 +225,8 @@ async function startTransport() {
   state.isPlaying = true;
   state.currentStep = 0;
   state.nextStepTime = audioCtx.currentTime + 0.05;
+  state.phaseSegments = [];
+  pushPhaseSegment(state.nextStepTime, state.currentStep, state.currentBpm);
   state.schedulerId = window.setInterval(scheduler, LOOKAHEAD_INTERVAL_MS);
   updateTransportButton();
 }
@@ -189,6 +241,7 @@ function stopTransport() {
   }
   state.isPlaying = false;
   state.currentStep = 0;
+  state.phaseSegments = [];
   playhead.style.left = "0%";
   updateTransportButton();
 }
@@ -205,10 +258,49 @@ function queueTempoChange(nextBpm) {
   updateTempoText();
 }
 
+function beginTempoEditing() {
+  if (state.isTempoEditing) {
+    return;
+  }
+  state.isTempoEditing = true;
+  state.previewBpm = null;
+  updateTempoText();
+  bpmValue.hidden = true;
+  bpmInput.hidden = false;
+  tempoControl.setAttribute("aria-label", "Type tempo BPM and press Enter");
+  requestAnimationFrame(() => {
+    bpmInput.focus();
+    bpmInput.select();
+  });
+}
+
+function finishTempoEditing(shouldCommit) {
+  if (!state.isTempoEditing) {
+    return;
+  }
+  if (shouldCommit) {
+    const typed = Number.parseInt(bpmInput.value, 10);
+    if (Number.isFinite(typed)) {
+      queueTempoChange(typed);
+    }
+  }
+  state.isTempoEditing = false;
+  bpmInput.hidden = true;
+  bpmValue.hidden = false;
+  tempoControl.setAttribute("aria-label", TEMPO_CONTROL_IDLE_LABEL);
+  updateTempoText();
+}
+
 function handlePointerDown(event) {
+  if (state.isTempoEditing) {
+    return;
+  }
   event.preventDefault();
   state.drag.active = true;
+  state.drag.didDrag = false;
+  state.drag.pointerId = event.pointerId;
   state.drag.startX = event.clientX;
+  state.drag.startY = event.clientY;
   state.drag.startBpm = state.pendingBpm ?? state.currentBpm;
   state.previewBpm = state.drag.startBpm;
   updateTempoText();
@@ -216,31 +308,77 @@ function handlePointerDown(event) {
 }
 
 function handlePointerMove(event) {
-  if (!state.drag.active) {
+  if (!state.drag.active || event.pointerId !== state.drag.pointerId) {
     return;
   }
   const deltaX = event.clientX - state.drag.startX;
+  const deltaY = event.clientY - state.drag.startY;
+  if (
+    !state.drag.didDrag &&
+    Math.hypot(deltaX, deltaY) < TAP_DRAG_THRESHOLD_PX
+  ) {
+    return;
+  }
+  state.drag.didDrag = true;
   const preview = clamp(state.drag.startBpm + deltaX * 0.35, MIN_BPM, MAX_BPM);
   state.previewBpm = Math.round(preview);
   updateTempoText();
 }
 
-function finishDrag() {
+function finishDrag(event, reason) {
   if (!state.drag.active) {
     return;
   }
-  queueTempoChange(state.previewBpm ?? state.currentBpm);
+  if (event.pointerId !== state.drag.pointerId) {
+    return;
+  }
+  const shouldOpenEditor = !state.drag.didDrag && reason === "up";
+  if (state.drag.didDrag) {
+    queueTempoChange(state.previewBpm ?? state.currentBpm);
+  }
   state.previewBpm = null;
   state.drag.active = false;
+  state.drag.didDrag = false;
+  state.drag.pointerId = null;
   updateTempoText();
+  if (shouldOpenEditor) {
+    beginTempoEditing();
+  }
+}
+
+function handleTempoInputKeydown(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    finishTempoEditing(true);
+    return;
+  }
+  if (event.key === "Escape") {
+    event.preventDefault();
+    finishTempoEditing(false);
+  }
 }
 
 function initTempoDrag() {
   tempoControl.addEventListener("pointerdown", handlePointerDown);
   tempoControl.addEventListener("pointermove", handlePointerMove);
-  tempoControl.addEventListener("pointerup", finishDrag);
-  tempoControl.addEventListener("pointercancel", finishDrag);
-  tempoControl.addEventListener("lostpointercapture", finishDrag);
+  tempoControl.addEventListener("pointerup", (event) => finishDrag(event, "up"));
+  tempoControl.addEventListener("pointercancel", (event) =>
+    finishDrag(event, "cancel")
+  );
+  tempoControl.addEventListener("lostpointercapture", (event) =>
+    finishDrag(event, "lost")
+  );
+  tempoControl.addEventListener("keydown", (event) => {
+    if (state.isTempoEditing) {
+      return;
+    }
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      beginTempoEditing();
+    }
+  });
+  bpmInput.addEventListener("keydown", handleTempoInputKeydown);
+  bpmInput.addEventListener("blur", () => finishTempoEditing(true));
 }
 
 transportButton.addEventListener("click", () => {

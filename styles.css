@@ -68,6 +68,36 @@ body {
   touch-action: none;
 }
 
+.tempo-circle > span {
+  width: 100%;
+  text-align: center;
+}
+
+.tempo-input {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-align: center;
+  -webkit-appearance: none;
+  appearance: none;
+  caret-color: var(--white);
+}
+
+.tempo-input:focus,
+.tempo-input:focus-visible,
+.tempo-input:active {
+  border: 0;
+  outline: none;
+  box-shadow: none;
+}
+
 .transport-button {
   min-width: 92px;
   height: 42px;

@@ -9,8 +9,21 @@
   <body>
     <main class="app">
       <section class="top-panel">
-        <button id="tempoControl" class="tempo-circle" type="button" aria-label="Drag left or right to set tempo">
+        <button
+          id="tempoControl"
+          class="tempo-circle"
+          type="button"
+          aria-label="Drag left or right to set tempo or tap to type BPM"
+        >
           <span id="bpmValue">120</span>
+          <input
+            id="bpmInput"
+            class="tempo-input"
+            type="text"
+            inputmode="numeric"
+            aria-label="Enter tempo in BPM"
+            hidden
+          />
         </button>
         <button id="transportButton" class="transport-button" type="button" aria-label="Play metronome">
           Play
