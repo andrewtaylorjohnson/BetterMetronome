@@ -13,7 +13,7 @@ const LOOKAHEAD_INTERVAL_MS = 25;
 const SCHEDULE_AHEAD_TIME = 0.1;
 const TAP_DRAG_THRESHOLD_PX = 8;
 const MIN_BPM = 40;
-const MAX_BPM = 240;
+const MAX_BPM = 500;
 const TEMPO_CONTROL_IDLE_LABEL = "Drag left or right to set tempo or tap to type BPM";
 
 const state = {
